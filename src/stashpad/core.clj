@@ -10,7 +10,8 @@
             [compojure.route :as route]
             [ring.adapter.jetty :as jetty]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-            [ring.middleware.params :refer [wrap-params]]))
+            [ring.middleware.params :refer [wrap-params]]
+            [stashpad.db.core :as db]))
 
 (def snippets
   "def defines a new symbol called 'snippets' in the namespace, 
@@ -22,26 +23,28 @@
 
 (defn save-snippet
   "defn defines a new function that takes a single argument snippet"
-  [snippet]
+  [snippet-content]
+  (db/save-snippet snippet-content)
 
   ; let binds the result of str to the symbol id within the scope of the let block
   ; it generates a unique identifier for each snippet
-  (let [id (str (java.util.UUID/randomUUID))]
+  ;; (let [id (str (java.util.UUID/randomUUID))]
 
     ; swap! applies a function to the value of the atom and updates the atom with the return value of the function 
     ; here it associates the unique id with the snippet in the snippet atom
-    (swap! snippets assoc id snippet)
+    ;; (swap! snippets assoc id snippet)
 
     ; outputs a message to the console, useful for debugging
-    (println "Saved snippet with ID:" id "Content:" snippet) ;; content keeps showing nil
-    id))
+    ;; (println "Saved snippet with ID:" id "Content:" snippet) id)
+)
 
 
 (defn get-snippet
   "retrieves a snippet by id from the snippets atom
    @ is a deref operator used to get the current value of the atom"
   [id]
-  (@snippets id))
+  ;; (@snippets id)
+  (db/get-snippet id))
 
 
 (defn submit-snippet
@@ -86,8 +89,10 @@
 
 
 (defn -main 
-  "defines the main entry point of the application 
-  jetty web server is started to serve app on port 3000 
-  join? false means the current thread won't block on the server thread"
+  "defines the main entry point of the application,
+  initialises database, 
+  jetty web server is started to serve app on port 3000, 
+  join? false means the current thread won't block on the server thread,"
   []
+  (db/initialize-db) 
   (jetty/run-jetty app {:port 3000 :join? false}))
