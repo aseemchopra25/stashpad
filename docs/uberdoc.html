@@ -2866,7 +2866,7 @@ net.brehaut.ClojureTools = (function (SH) {
   };
 })(SyntaxHighlighter);
 </script><title>stashpad -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">stashpad</h1><h2 class="project-version">0.1.0</h2><br /><p>A simple Clojure-based pastebin</p>
-</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.10.1</td></tr><tr><td class="dep-name">ring</td><td class="dotted"><hr /></td><td class="dep-version">1.8.2</td></tr><tr><td class="dep-name">ring/ring-defaults</td><td class="dotted"><hr /></td><td class="dep-version">0.3.3</td></tr><tr><td class="dep-name">compojure</td><td class="dotted"><hr /></td><td class="dep-version">1.6.1</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#stashpad.core">stashpad.core</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#stashpad.core" name="stashpad.core"><h1 class="project-name">stashpad.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
+</div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.10.1</td></tr><tr><td class="dep-name">ring</td><td class="dotted"><hr /></td><td class="dep-version">1.8.2</td></tr><tr><td class="dep-name">ring/ring-defaults</td><td class="dotted"><hr /></td><td class="dep-version">0.3.3</td></tr><tr><td class="dep-name">compojure</td><td class="dotted"><hr /></td><td class="dep-version">1.6.1</td></tr><tr><td class="dep-name">org.xerial/sqlite-jdbc</td><td class="dotted"><hr /></td><td class="dep-version">3.34.0</td></tr><tr><td class="dep-name">org.clojure/java.jdbc</td><td class="dotted"><hr /></td><td class="dep-version">0.7.11</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#stashpad.core">stashpad.core</a></li><li><a href="#stashpad.db.core">stashpad.db.core</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#stashpad.core" name="stashpad.core"><h1 class="project-name">stashpad.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(ns stashpad.core
   ; :require brings other namespaces in the the current namespace, making their functions or macros avilable for use
   ; :as gives an aslias to the imported namespaces for convenience
@@ -2875,26 +2875,30 @@ net.brehaut.ClojureTools = (function (SH) {
             [compojure.route :as route]
             [ring.adapter.jetty :as jetty]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-            [ring.middleware.params :refer [wrap-params]]))</pre></td></tr><tr><td class="docs"><p>def defines a new symbol called 'snippets' in the namespace, 
- atom creates an atom with an initial value of an empty map,
- atoms provide a way to manage state that can be safely mutated from different threads essentially preventing race conditions</p>
-</td><td class="codes"><pre class="brush: clojure">(def snippets
-  (atom {})) </pre></td></tr><tr><td class="docs"><p>defn defines a new function that takes a single argument snippet</p>
+            [ring.middleware.params :refer [wrap-params]]
+            [stashpad.db.core :as db]))</pre></td></tr><tr><td class="docs"><p>(def snippets
+removed as sqlite is being used now
+  "def defines a new symbol called 'snippets' in the namespace, 
+   atom creates an atom with an initial value of an empty map,
+   atoms provide a way to manage state that can be safely mutated from different threads essentially preventing race conditions"</p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>  (atom {})) </p>
+</td><td class="codes"></td></tr><tr><td class="docs"><p>defn defines a new function that takes a single argument snippet</p>
 </td><td class="codes"><pre class="brush: clojure">(defn save-snippet
-  [snippet]
+  [snippet-content]
+  (db/save-snippet snippet-content)
   ; let binds the result of str to the symbol id within the scope of the let block
   ; it generates a unique identifier for each snippet
-  (let [id (str (java.util.UUID/randomUUID))]
+  ;; (let [id (str (java.util.UUID/randomUUID))]
     ; swap! applies a function to the value of the atom and updates the atom with the return value of the function 
     ; here it associates the unique id with the snippet in the snippet atom
-    (swap! snippets assoc id snippet)
+    ;; (swap! snippets assoc id snippet)
     ; outputs a message to the console, useful for debugging
-    (println &quot;Saved snippet with ID:&quot; id &quot;Content:&quot; snippet) ;; content keeps showing nil
-    id))</pre></td></tr><tr><td class="docs"><p>retrieves a snippet by id from the snippets atom
+    ;; (println &quot;Saved snippet with ID:&quot; id &quot;Content:&quot; snippet) id))</pre></td></tr><tr><td class="docs"><p>retrieves a snippet by id from the snippets atom
  @ is a deref operator used to get the current value of the atom</p>
 </td><td class="codes"><pre class="brush: clojure">(defn get-snippet
   [id]
-  (@snippets id))</pre></td></tr><tr><td class="docs"><p>defines a function to handle form submissions
+  ;; (@snippets id)
+  (db/get-snippet id))</pre></td></tr><tr><td class="docs"><p>defines a function to handle form submissions
 request is the incoming http request from the user</p>
 </td><td class="codes"><pre class="brush: clojure">(defn submit-snippet
   [request]
@@ -2921,12 +2925,53 @@ defines a route for the http post method on /submit which handles form submissio
  wrap-params parses request parameters</p>
 </td><td class="codes"><pre class="brush: clojure">(def app
   (-&gt; (wrap-defaults app-routes site-defaults)
-      (wrap-params)))</pre></td></tr><tr><td class="docs"><p>defines the main entry point of the application 
-jetty web server is started to serve app on port 3000 
-join? false means the current thread won't block on the server thread</p>
+      (wrap-params)))</pre></td></tr><tr><td class="docs"><p>defines the main entry point of the application,
+initialises database, 
+jetty web server is started to serve app on port 3000, 
+join? false means the current thread won't block on the server thread,</p>
 </td><td class="codes"><pre class="brush: clojure">(defn -main 
   []
-  (jetty/run-jetty app {:port 3000 :join? false}))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/clj-commons/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a><div id="floating-toc"><ul><li class="floating-toc-li" id="floating-toc_stashpad.core">stashpad.core</li></ul></div></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
+  (db/initialize-db) 
+  (jetty/run-jetty app {:port 3000 :join? false}))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#stashpad.db.core" name="stashpad.db.core"><h1 class="project-name">stashpad.db.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
+</td><td class="codes"><pre class="brush: clojure">(ns stashpad.db.core
+  ; jdbc is java database connectivity
+  (:require [clojure.java.jdbc :as jdbc]))</pre></td></tr><tr><td class="docs"><p>creates a global variable db spec which is a map;
+ it has two keys dbtype and dbname</p>
+</td><td class="codes"><pre class="brush: clojure">(def db-spec 
+  {:dbtype &quot;sqlite&quot; :dbname &quot;stashpad.db&quot;})</pre></td></tr><tr><td class="docs"><p>initializes the db;
+ defn is a macro that defines the new function named initialize-db
+ [] is a parameter vector for the function, as this function takes no arguments</p>
+</td><td class="codes"><pre class="brush: clojure">(defn initialize-db 
+  [] 
+  ; this is a macro that sets up the db connection and assigns it to the symbol conn;
+  ; [conn db-spec] is a binding vector that takes the database specification from db-spec and creates a connection object
+  ; which is referred by the symbol conn within the body of the macro
+  (jdbc/with-db-connection [conn db-spec] 
+    ; jdbc/execute! runs the sql command provided to it on the database connection conn
+    (jdbc/execute! conn
+                   ; this command tells the database to create a new table called snippets
+                   ; with two columns id and content if it already doesn't exist
+                   [&quot;CREATE TABLE IF NOT EXISTS snippets (
+          id TEXT PRIMARY KEY,
+          content TEXT NOT NULL);&quot;])))</pre></td></tr><tr><td class="docs"><p>saves a new snippet to the database and returns its id</p>
+</td><td class="codes"><pre class="brush: clojure">(defn save-snippet
+  [snippet-content]
+  ; let is a special form that binds values to symbols within the local scope
+  ; here it creates a local symbol id and binds it to a string representation of a random UUID
+  (let [id (str (java.util.UUID/randomUUID))]
+    (jdbc/with-db-connection [conn db-spec]
+      (jdbc/execute! conn
+      [&quot;INSERT INTO snippets (id, content) VALUES (?, ?)&quot;
+       id snippet-content])) 
+    ; id is the return value of this function
+  id))</pre></td></tr><tr><td class="docs"><p>retrieves the content of a snippet by its id from the database</p>
+</td><td class="codes"><pre class="brush: clojure">(defn get-snippet
+  [id]
+  ; first is a clojure function tha returns the first item from a collection
+  (first (jdbc/query db-spec
+                     ; clojure replaces the ? with the value of id when it runs the command
+                     [&quot;SELECT content FROM snippets WHERE id = ?&quot; id] 
+                     {:row-fn :content})))</pre></td></tr><tr><td class="spacer docs">&nbsp;</td><td class="codes" /></tr></table><div class="footer">Generated by <a href="https://github.com/clj-commons/marginalia">Marginalia</a>.&nbsp;&nbsp;Syntax highlighting provided by Alex Gorbatchev's <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a><div id="floating-toc"><ul><li class="floating-toc-li" id="floating-toc_stashpad.core">stashpad.core</li><li class="floating-toc-li" id="floating-toc_stashpad.db.core">stashpad.db.core</li></ul></div></div><script type="text/javascript">SyntaxHighlighter.defaults['gutter'] = false;
 SyntaxHighlighter.all();
 
 // hackity hack
