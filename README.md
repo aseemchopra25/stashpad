@@ -8,4 +8,4 @@ Secure note-taking web app created using clojure for learning purposes
 
 ## documentation
 
-`lein marg` to generate documentation
+`lein marg` to generate documentation and open `/docs/uberdoc.html` in a browser
