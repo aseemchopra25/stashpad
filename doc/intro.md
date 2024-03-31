@@ -1,3 +1,3 @@
 # Introduction to stashpad
 
-TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)
+Secure note-taking web app created using clojure for learning purposes
