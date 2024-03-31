@@ -1,8 +1,11 @@
-## stashpad
+# stashpad
+
 Secure note-taking web app created using clojure for learning purposes
 
-### run
+## run
+
 `lein run` and navigate to localhost:3000 to see the web application
 
-### documentation
+## documentation
+
 `lein marg` to generate documentation
