@@ -4,5 +4,6 @@
                  [ring "1.8.2"]
                  [ring/ring-defaults "0.3.3"]
                  [compojure "1.6.1"]]
-  :plugins [[lein-codox "0.10.8"]]
+  :plugins [[lein-codox "0.10.8"]
+            [lein-marginalia "0.9.2"]]
   :main ^:skip-aot stashpad.core)
