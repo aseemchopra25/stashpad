@@ -13,12 +13,13 @@
             [ring.middleware.params :refer [wrap-params]]
             [stashpad.db.core :as db]))
 
-(def snippets
-  "def defines a new symbol called 'snippets' in the namespace, 
-   atom creates an atom with an initial value of an empty map,
-   atoms provide a way to manage state that can be safely mutated from different threads essentially preventing race conditions"
+;; (def snippets
+;; removed as sqlite is being used now
+;;   "def defines a new symbol called 'snippets' in the namespace, 
+;;    atom creates an atom with an initial value of an empty map,
+;;    atoms provide a way to manage state that can be safely mutated from different threads essentially preventing race conditions"
 
-  (atom {})) 
+;;   (atom {})) 
 
 
 (defn save-snippet
