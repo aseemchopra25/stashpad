@@ -6,6 +6,5 @@
                  [compojure "1.6.1"]
                  [org.xerial/sqlite-jdbc "3.34.0"]
                  [org.clojure/java.jdbc "0.7.11"]]
-  :plugins [[lein-codox "0.10.8"]
-            [lein-marginalia "0.9.2"]]
+  :plugins [[lein-marginalia "0.9.2"]]
   :main ^:skip-aot stashpad.core)
