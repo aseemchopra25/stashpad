@@ -1,3 +1,5 @@
+; leiningen project file that describes your project's dependencies,
+; plugins and general settings
 (defproject stashpad "0.1.0"
   :description "A simple Clojure-based pastebin"
   :dependencies [[org.clojure/clojure "1.10.1"]
