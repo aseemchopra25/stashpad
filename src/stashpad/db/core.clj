@@ -24,9 +24,11 @@
                    ; this command tells the database to create a new table called snippets
                    ; with two columns id and content if it already doesn't exist
                    ["CREATE TABLE IF NOT EXISTS snippets (
-          id TEXT PRIMARY KEY,
-          content TEXT NOT NULL
-        );"])
+                     id TEXT PRIMARY KEY,
+                     content TEXT NOT NULL,
+                     userid TEXT, 
+                     FOREIGN KEY(userid) REFERENCES users(userid)
+                     );"])
     (jdbc/execute! conn 
                    ; this command tells the database to create a new table called users
                    ; with two columns username and password_hash if it already doesn't exist
@@ -37,14 +39,14 @@
 
 (defn save-snippet
   "saves a new snippet to the database and returns its id"
-  [snippet-content]
+  [snippet-content userid]
   ; let is a special form that binds values to symbols within the local scope
   ; here it creates a local symbol id and binds it to a string representation of a random UUID
   (let [id (str (java.util.UUID/randomUUID))]
     (jdbc/with-db-connection [conn db-spec]
       (jdbc/execute! conn
-      ["INSERT INTO snippets (id, content) VALUES (?, ?)"
-       id snippet-content])) 
+      ["INSERT INTO snippets (id, content, userid) VALUES (?, ?, ?)"
+       id snippet-content userid])) 
     ; id is the return value of this function
   id))
 
