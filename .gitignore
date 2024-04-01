@@ -14,5 +14,4 @@ pom.xml.asc
 /.clj-kondo
 /.lsp
 .env
-*Db.*
 *.db
