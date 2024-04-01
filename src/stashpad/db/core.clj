@@ -2,7 +2,8 @@
 ; are a way to organize and group functions and prevent naming conflicts
 (ns stashpad.db.core
   ; jdbc is java database connectivity
-  (:require [clojure.java.jdbc :as jdbc]))
+  (:require [clojure.java.jdbc :as jdbc]
+            [buddy.hashers :as hashers]))
 
 (def db-spec 
   "creates a global variable db spec which is a map;
@@ -25,7 +26,14 @@
                    ["CREATE TABLE IF NOT EXISTS snippets (
           id TEXT PRIMARY KEY,
           content TEXT NOT NULL
-        );"])))
+        );"])
+    (jdbc/execute! conn 
+                   ; this command tells the database to create a new table called users
+                   ; with two columns username and password_hash if it already doesn't exist
+                   ["CREATE TABLE IF NOT EXISTS users (
+                     userid TEXT PRIMARY KEY,
+                     username TEXT UNIQUE,
+                     password_hash TEXT NOT NULL);"])))
 
 (defn save-snippet
   "saves a new snippet to the database and returns its id"
@@ -48,3 +56,30 @@
                      ; clojure replaces the ? with the value of id when it runs the command
                      ["SELECT content FROM snippets WHERE id = ?" id] 
                      {:row-fn :content})))
+
+(defn create-user
+  "creates a new user with a userid, username, and a hashed password."
+  [username password]
+  (let [userid (str (java.util.UUID/randomUUID))
+        password-hash (hashers/derive password)]
+    (try
+      (jdbc/with-db-connection [conn db-spec]
+        (jdbc/execute! conn
+                       ["INSERT INTO users (userid, username, password_hash) VALUES (?, ?, ?)"
+                        userid username password-hash]))
+      (catch Exception e 
+        (throw (Exception. "Failed to create user"))))))
+
+(defn find-user-by-username
+  [username]
+  (jdbc/query db-spec
+              ["SELECT * FROM users WHERE username = ? LIMIT 1" username]
+              {:result-set-fn first})) ; Ensures a map is returned, or nil if no result
+
+
+(defn validate-user-credentials
+  "Validates user credentials using username."
+  [username submitted-password]
+  (let [user (find-user-by-username username)] 
+    (when (and user (hashers/check submitted-password (:password_hash user)))
+      user)))

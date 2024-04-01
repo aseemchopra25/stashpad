@@ -5,6 +5,10 @@
                  [ring/ring-defaults "0.3.3"]
                  [compojure "1.6.1"]
                  [org.xerial/sqlite-jdbc "3.34.0"]
-                 [org.clojure/java.jdbc "0.7.11"]]
-  :plugins [[lein-marginalia "0.9.2"]]
+                 [org.clojure/java.jdbc "0.7.11"]
+                 [buddy "2.0.0"]
+                 [environ "1.2.0"]
+                 [ring/ring-json "0.5.0"]]
+  :plugins [[lein-marginalia "0.9.2"]
+            [lein-environ "1.2.0"]]
   :main ^:skip-aot stashpad.core)

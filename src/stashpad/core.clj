@@ -11,7 +11,11 @@
             [ring.adapter.jetty :as jetty]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [ring.middleware.params :refer [wrap-params]]
-            [stashpad.db.core :as db]))
+            [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
+            [stashpad.db.core :as db]
+            [ring.util.anti-forgery :refer [anti-forgery-field]]
+            [buddy.sign.jwt :as jwt]
+            [environ.core :refer [env]]))
 
 ;; (def snippets
 ;; removed as sqlite is being used now
@@ -61,6 +65,38 @@
         id (save-snippet snippet-from-direct-access)]
     (str "Saved snippet with ID: " id " <a href='/snippets/" id "'>View</a>")))
 
+(def jwt-secret (env :jwt-secret))
+
+(defn generate-jwt [userid]
+  (let [jwt-secret (env :jwt-secret)]
+    (jwt/sign {:userid userid} jwt-secret {:alg :hs256})))
+
+(defn login-handler [request]
+  (let [username (:username (:params request))
+        password (:password (:params request))
+        user (db/validate-user-credentials username password)]
+    (if user
+      (let [jwt-token (generate-jwt (:userid user))]
+        ;; Removed println statement that logs JWT token
+        {:status 200
+         :headers {"Content-Type" "application/json"
+                   "Set-Cookie" (str "Authorization=" jwt-token "; HttpOnly")}
+         :body "Login Successful"}) ;; Changed response body to not include JWT
+      {:status 401
+       :headers {"Content-Type" "application/json"}
+       :body "Invalid Credentials"})))
+
+(defn register-handler [request] 
+  (let [username (:username (:params request))
+        password (:password (:params request))] 
+    (if (and username password)
+      (try
+        (db/create-user username password)
+        {:status 200 :headers {"Content-Type" "application/json"} :body "User Successfully Registered"}
+        (catch Exception e
+          {:status 500 :headers {"Content-Type" "application/json"} :body "An error occurred during registration"}))
+      {:status 400 :headers {"Content-Type" "application/json"} :body "Missing username or password"})))
+
 
 ; defroutes is a macro from Compojure that defines URL routes for my web application
 (defroutes app-routes
@@ -68,16 +104,23 @@
   "defines a route for the http get method on the root path. it renders an html form
   defines a route for the http post method on /submit which handles form submissions using submit-snippet function"
 
-  (GET "/" request
-    (let [token (:anti-forgery-token request)]
-      (str "<form method='POST' action='/submit'>"
-           "<input type='hidden' name='__anti-forgery-token' value='" token "'/>"
-           "<input type='text' name='snippet'/>"
-           "<input type='submit' value='Submit'/>"
-           "</form>")))
+  (GET "/" []
+    (let [csrf-token (anti-forgery-field)]
+      (str "<!DOCTYPE html><html><head><title>Login/Register</title></head><body>"
+           "<h2>Login</h2><form action='/login' method='POST'>" csrf-token
+           "Username: <input type='text' name='username'/><br>"
+           "Password: <input type='password' name='password'/><br>"
+           "<input type='submit' value='Login'/></form>"
+           "<h2>Register</h2><form action='/register' method='POST'>" csrf-token
+           "Username: <input type='text' name='username'/><br>"
+           "Password: <input type='password' name='password'/><br>"
+           "<input type='submit' value='Register'/></form>"
+           "</body></html>")))
   
-  (POST "/submit" request (submit-snippet request))
-  (GET "/snippets/:id" [id] (str "<h2>Snippet:</h2><p>" (get-snippet id) "</p>"))
+  (POST "/submit" request (submit-snippet request)) 
+  (GET "/snippets/:id" [id] (str "<h2>Snippet:</h2><p>" (get-snippet id) "</p>")) 
+  (POST "/login" req (login-handler req)) 
+  (POST "/register" req (register-handler req)) 
   (route/not-found "Not Found"))
 
 (def app
@@ -86,7 +129,10 @@
    wrap-defaults applies default middleware settings for common web-application needs
    wrap-params parses request parameters"
   (-> (wrap-defaults app-routes site-defaults)
-      (wrap-params)))
+       (wrap-params)
+       (wrap-json-body {:types ["application/json"]})
+       (wrap-json-response)))
+
 
 
 (defn -main 
