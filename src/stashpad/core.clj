@@ -15,7 +15,8 @@
             [stashpad.db.core :as db]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
             [buddy.sign.jwt :as jwt]
-            [environ.core :refer [env]]))
+            [environ.core :refer [env]]
+            [clojure.string :as str]))
 
 ;; (def snippets
 ;; removed as sqlite is being used now
@@ -28,8 +29,8 @@
 
 (defn save-snippet
   "defn defines a new function that takes a single argument snippet"
-  [snippet-content]
-  (db/save-snippet snippet-content)
+  [snippet-content userid]
+  (db/save-snippet snippet-content userid)
 
   ; let binds the result of str to the symbol id within the scope of the let block
   ; it generates a unique identifier for each snippet
@@ -51,21 +52,32 @@
   ;; (@snippets id)
   (db/get-snippet id))
 
+(def jwt-secret (env :jwt-secret))
 
 (defn submit-snippet
-  "defines a function to handle form submissions
-  request is the incoming http request from the user"
+  "Handles form submissions for snippets, associating them with a user"
   [request]
-
-  ; extracts submitted form parameters into params-map
   (let [params-map (:params request)
-
-        ; retrieves :snippet's key's value from this map 
         snippet-from-direct-access (:snippet params-map)
-        id (save-snippet snippet-from-direct-access)]
-    (str "Saved snippet with ID: " id " <a href='/snippets/" id "'>View</a>")))
+        ; Extract the JWT token from the Authorization header, assuming it's formatted as "Bearer <token>"
+        token (-> request :headers :authorization
+                  (str/split #" ")
+                  (second)
+                  ; The split function returns a vector, where the second element is the token
+                  )
+        ; Use jwt/unsign to verify the token and extract the payload, which includes the userid
+        payload (try
+                  (jwt/unsign token jwt-secret {:alg :hs256})
+                  (catch Exception e
+                    nil))
+        userid (:userid payload)
+        ; Proceed with saving the snippet if userid is available
+        id (when userid (db/save-snippet snippet-from-direct-access userid))]
+    (if id
+      (str "Saved snippet with ID: " id " <a href='/snippets/" id "'>View</a>")
+      "Unauthorized: You must be logged in to submit snippets.")))
 
-(def jwt-secret (env :jwt-secret))
+
 
 (defn generate-jwt [userid]
   (let [jwt-secret (env :jwt-secret)]
